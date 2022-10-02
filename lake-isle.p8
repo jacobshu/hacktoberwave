@@ -1,9 +1,83 @@
 pico-8 cartridge // http://www.pico-8.com
 version 38
 __lua__
+-- modified from https://www.lexaloffle.com/bbs/?pid=115136
 
+function _init()
+    -- replace palette
+    pal({129,1,140,13,14,9,10,135,7,7,7,7,7,7,7},1)
+   
+    star={
+        x=85,
+        y=75,
+        size=32,
+        angle=rnd(1),
+    }
+   
+    speed=32
+end
+
+function _update()
+    star.size=32+rnd(2)
+    star.angle-=0.003
+end
+
+function _draw()
+    cls()
+   
+    -- draw star
+    for i=0,3 do
+        local x2=star.x+cos(star.angle+i/7)*star.size
+        local y2=star.y+sin(star.angle+i/3)*star.size
+        line_with_gradient(star.x,star.y,x2,y2,4)
+    end
+    smooth_circfill_with_gradient(star.x,star.y,star.size/4,12)
+end
 -->8
+-- custom functions
+function pset_gradient(x,y,n)
+    if n>0 then
+        local color=pget(x,y)
 
+        local newColor=min(flr(color+n),9)
+        pset(x,y,newColor)
+    end
+end
+
+function line_with_gradient(x1,y1,x2,y2,n)
+    local offset=0.5
+    x1,y1 = flr(x1+offset),flr(y1+offset)
+    x2,y2 = flr(x2+offset),flr(y2+offset)
+    local xr=x2-x1
+    local yr=y2-y1
+   
+    if abs(xr)>abs(yr) then
+        for x=x1,x2,sgn(xr) do
+            local prog=(x-x1)/xr
+            local y=flr(y1+yr*prog+offset)
+            local _n=ceil(n-prog*n)
+            pset_gradient(x,y,_n)
+        end
+    else
+        for y=y1,y2,sgn(yr) do
+            local prog=(y-y1)/yr
+            local x=flr(x1+xr*prog+offset)
+            local _n=ceil(n-prog*n)
+            pset_gradient(x,y,_n)
+        end
+    end
+end
+
+function smooth_circfill_with_gradient(x,y,radius,n)
+    -- from https://gamedev.stackexchange.com/questions/176036/how-to-draw-a-smoother-solid-fill-circle
+    local diameter=radius*2
+    for _y=0,diameter do
+        for _x=0,diameter do
+            local _n=n-((_x-radius)^2+(_y-radius)^2)/radius^2*9
+            pset_gradient(x+_x-radius,y+_y-radius,_n)
+        end
+    end
+end
 __sfx__
 000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001200001415515155151551c1551015514155151551c1551015512155151551a155121551c1551c174151551415515155151551c1551015514155151551c1551015512155151551a155121551c1551c17415155
