@@ -6,10 +6,13 @@ __lua__
 function _init()
     -- replace palette
     pal({129,1,140,13,14,9,10,135,7,7,7,7,7,7,7},1)
+    cls(1)
+    -- poke(24372,1)
+    -- gradients={1,5,8,9}
    
     star={
-        x=85,
-        y=75,
+        x=10,
+        y=120,
         size=32,
         angle=rnd(1),
     }
@@ -20,21 +23,89 @@ end
 function _update()
     star.size=32+rnd(2)
     star.angle-=0.003
+    star.x=star.x+0.01*(128-star.y)
+    star.y=star.y-0.8
 end
 
 function _draw()
-    cls()
+  cls(1)
+  -- for i=2,#gradients do
+  --   for j=128,-128,-1 do
+  --     pal(0,gradients[i])
+  --     draw_gradient(j,gradients[i-1])
+  --   end
+  -- end
+  for x = 0, 128, 1 do
+    for y = 0, 128, 1 do
+      local intensity = x / 128
+      local color = flr(y / 8) * dither(x, y, intensity)
+      pset(x, y, color)
+    end
+  end
    
     -- draw star
-    for i=0,3 do
-        local x2=star.x+cos(star.angle+i/7)*star.size
-        local y2=star.y+sin(star.angle+i/3)*star.size
-        line_with_gradient(star.x,star.y,x2,y2,4)
-    end
-    smooth_circfill_with_gradient(star.x,star.y,star.size/4,12)
+  for i=0,3 do
+      local x2=star.x+cos(star.angle+i/4)*star.size/2
+      local y2=star.y+sin(star.angle+i/4)*star.size/2
+      local x3=star.x+cos(3*star.angle-i/4)*star.size/2
+      local y3=star.y+sin(3*star.angle-i/4)*star.size/2
+      line_with_gradient(star.x,star.y,x2,y2,4)
+      line_with_gradient(star.x,star.y,x3,y3,4)
+  end
+  smooth_circfill_with_gradient(star.x,star.y,star.size/4,12)
 end
 -->8
 -- custom functions
+function draw_gradient(y, cols)
+      local ptn = 1
+      color(cols)
+      while y < 128 do
+          rectfill(0, y, 127, y + 3,cols+dither[ptn])
+          y += 8
+          ptn = min(ptn + 1, 17)
+      end
+  end
+
+  dither = {0x1000.0000,0x1000.8000,0x1000.8020,0x1000.a020,0x1000.a0a0,0x1000.a4a0,0x1000.a4a1,0x1000.a5a1,0x1000.a5a5,0x1000.e5a5,0x1000.e5b5,0x1000.f5b5,0x1000.f5f5,0x1000.fdf5,0x1000.fdf7,0x1000.fff7,0x1000.ffff,0x1000.ffff}
+  function dither(xc, yc, value)
+    local ox = xc % 3
+    local oy = yc % 3
+    if value > 0.9 then
+      return 1
+    elseif value > 0.75 then
+      if (ox == 1 and oy == 1) then
+        return 0
+      end
+      return 1
+    elseif value > 0.6 then
+      if (ox == oy or abs(ox - oy) == 1) then
+        return 1
+      end
+      return 0
+    elseif value > 0.45 then
+      if (ox == oy) then
+        return 0
+      end
+      return 1
+    elseif value > 0.3 then
+      if (ox == oy) then
+        return 1
+      end
+      return 0
+    elseif value > 0.15 then
+      if (ox == oy or abs(ox - oy) == 1) then
+        return 0
+      end
+      return 1
+    elseif value > 0 then
+      if (ox == 1 and oy == 1) then
+        return 1
+      end
+      return 0
+    end
+    return 0
+  end
+
 function pset_gradient(x,y,n)
     if n>0 then
         local color=pget(x,y)
